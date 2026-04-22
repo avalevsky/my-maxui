@@ -1,0 +1,44 @@
+name: Deploy to GitHub Pages
+
+# Run on every push to the default branch (main)
+on:
+  push:
+    branches: [ main ]
+
+# Give the default GITHUB_TOKEN write permission on the repo
+permissions:
+  contents: write        # needed to push to ghpages
+  pages: write          # (optional) needed if you also use the pages API
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1 Checkout the source code
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # get full history – required for pushing
+
+      # 2 Set up Node.js (use a recent LTS)
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'   # any 20.x works
+          cache: 'npm'
+
+      # 3 Clean install (npm will pull the optional binary for rolldown)
+      - name: Install dependencies
+        run: npm install
+
+      # 4 Build the site (vite will honor the base URL we set)
+      - name: Build
+        run: npm run build
+
+      # 5 Deploy the static folder to the ghpages branch
+      - name: Deploy
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./dist
+          force_orphan: true   # keep a clean onecommit history on ghpages
